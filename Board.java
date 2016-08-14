@@ -8,24 +8,25 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-//import java.math.*;
+import java.math.BigInteger;
 
 
 public class Board extends JPanel implements ActionListener{
 
-  private int size                       = 8;
+  private int size                       = 19;
   private JButton[] button               = new JButton[ size*size ];
   private Insets inset                   = new Insets( 0, 0, 0, 0 );
   private boolean redPlayer              = true;
-  private static long redBoard           = 0L;
-  private static long blueBoard          = 0L;
-  private static final long winHorizMask = 31L;
-  private static final long winVertcMask = 4311810305L;
-  private static final long winDiagvMask = 4328785936L;
-  private static final long winDiaghMask = 68853957121L;
+  private static BigInteger redBoard     = BigInteger.ZERO;
+  private static BigInteger blueBoard    = BigInteger.ZERO;
+  private static BigInteger winHorizMask;
+  private static BigInteger winVertcMask;
+  private static BigInteger winDiagRMask;
+  private static BigInteger winDiagLMask;
 
   Board(){
     initLayout();
+    initMasks();
   }
   
   private void initLayout() {
@@ -42,10 +43,37 @@ public class Board extends JPanel implements ActionListener{
       add(button[i], gbc);
     }
   }
+  
+  private void initMasks(){
+    BigInteger base = new BigInteger( "2" );
+    winHorizMask = BigInteger.ONE.add( base.pow( 1 ) )
+                                 .add( base.pow( 2 ) )
+                                 .add( base.pow( 3 ) )
+                                 .add( base.pow( 4 ) );
+
+    winVertcMask = BigInteger.ONE.add( base.pow( 1 * size ) )
+                                 .add( base.pow( 2 * size ) )
+                                 .add( base.pow( 3 * size ) )
+                                 .add( base.pow( 4 * size ) );
+
+    winDiagRMask = BigInteger.ONE.add( base.pow( 1 * ( size + 1 ) ) )
+                                 .add( base.pow( 2 * ( size + 1 ) ) )
+                                 .add( base.pow( 3 * ( size + 1 ) ) )
+                                 .add( base.pow( 4 * ( size + 1 ) ) );
+
+    winDiagLMask =  base.pow( 4 ).add( base.pow( 1 * ( size - 1 ) + 4 ) )
+                                 .add( base.pow( 2 * ( size - 1 ) + 4 ) )
+                                 .add( base.pow( 3 * ( size - 1 ) + 4 ) )
+                                 .add( base.pow( 4 * ( size - 1 ) + 4 ) );
+
+    System.out.println( "Mask1: " + winHorizMask );
+    System.out.println( "Mask2: " + winVertcMask );
+    System.out.println( "Mask3: " + winDiagRMask );
+    System.out.println( "Mask4: " + winDiagLMask );
+  }
 
   public void actionPerformed(ActionEvent e){
     JButton src = ( JButton ) e.getSource();
-    long shiftMe = 1L;
 
     for( int i=0; i < size*size; i++ ) {
       if( src == button[i] && src.getBackground() == Color.lightGray ){
@@ -60,9 +88,9 @@ public class Board extends JPanel implements ActionListener{
 
   }
   
-  public void handleClick( long playerBoard, Color c, int clicked ){
-    long shiftMe = 1L;
-    playerBoard |= (shiftMe << clicked);
+  public void handleClick( BigInteger playerBoard, Color c, int clicked ){
+    BigInteger shiftMe = BigInteger.ONE;
+    playerBoard = playerBoard.or( shiftMe.shiftLeft( clicked ) );
     button[clicked].setBackground(c);
     if( redPlayer )
       redBoard = playerBoard;
@@ -93,7 +121,9 @@ public class Board extends JPanel implements ActionListener{
   }
   
   private boolean isDraw(){
-    if( (redBoard | blueBoard) == Long.MAX_VALUE * 2 + 1 ){
+    BigInteger base = new BigInteger( "2" );
+    if( redBoard.or( blueBoard ).equals( base.pow( size*size ).subtract( 
+                        new BigInteger( "1" ) ) ) ){
       return true;
     }
     return false;
@@ -101,7 +131,7 @@ public class Board extends JPanel implements ActionListener{
 
   private boolean isWin(){
 
-    System.out.println( redBoard | blueBoard );
+    System.out.println( redBoard.or( blueBoard ) );
     
     if( checkWin( size, size-4, winHorizMask ) ){
       return true;
@@ -111,28 +141,28 @@ public class Board extends JPanel implements ActionListener{
       return true;
     }
     
-    if( checkWin( size-4, size-4, winDiagvMask ) ){
+    if( checkWin( size-4, size-4, winDiagRMask ) ){
       return true;
     }
     
-    if( checkWin( size-4, size-4, winDiaghMask ) ){
+    if( checkWin( size-4, size-4, winDiagLMask ) ){
       return true;
     }
     return false;
   }
   
-  private boolean checkWin( int x, int y, long mask){
+  private boolean checkWin( int x, int y, BigInteger mask){
     for( int row = 0; row < x; row++ ){
       for( int col = 0; col < y; col++ ){
-        long redBuf  = redBoard;
-        long blueBuf = blueBoard;
+        BigInteger redBuf  = redBoard;
+        BigInteger blueBuf = blueBoard;
         if( redPlayer ){
-          if( mask == (( redBuf >> row*size + col) & mask ) ){
+          if( (redBuf.shiftRight( row*size + col).and( mask ) ).equals( mask ) ){
             return true;
           }
         }
         else{
-          if( mask == (( blueBuf >> row*size + col) & mask ) ){
+          if( (blueBuf.shiftRight( row*size + col).and( mask ) ).equals( mask ) ){
             return true;
           }
         }
@@ -142,8 +172,8 @@ public class Board extends JPanel implements ActionListener{
   }
 
   private void initNewGame(){
-    redBoard  = 0L;
-    blueBoard = 0L;
+    redBoard  = BigInteger.ZERO;
+    blueBoard = BigInteger.ZERO;
     redPlayer = false;
 
     for( int i=0; i<size*size; i++){
