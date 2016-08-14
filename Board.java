@@ -78,24 +78,24 @@ public class Board extends JPanel implements ActionListener{
     for( int i=0; i < size*size; i++ ) {
       if( src == button[i] && src.getBackground() == Color.lightGray ){
         if( redPlayer ){
-          handleClick( redBoard, Color.RED, i );
+          handleClick( Color.RED, i );
         }
         else{
-          handleClick( blueBoard, Color.BLUE, i );
+          handleClick( Color.BLUE, i );
         }
       }
     }
 
   }
   
-  public void handleClick( BigInteger playerBoard, Color c, int clicked ){
+  public void handleClick( Color c, int clicked ){
     BigInteger shiftMe = BigInteger.ONE;
-    playerBoard = playerBoard.or( shiftMe.shiftLeft( clicked ) );
+    //playerBoard = playerBoard.or( shiftMe.shiftLeft( clicked ) );
     button[clicked].setBackground(c);
     if( redPlayer )
-      redBoard = playerBoard;
+      redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
     else
-      blueBoard = playerBoard;
+      blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
     if( isGameOver() ){
       initNewGame();
     }
