@@ -13,20 +13,52 @@ import java.math.BigInteger;
 
 public class Board extends JPanel implements ActionListener{
 
-  private int size                       = 19;
-  private JButton[] button               = new JButton[ size*size ];
-  private Insets inset                   = new Insets( 0, 0, 0, 0 );
-  private boolean redPlayer              = true;
-  private static BigInteger redBoard     = BigInteger.ZERO;
-  private static BigInteger blueBoard    = BigInteger.ZERO;
-  private static BigInteger winHorizMask;
-  private static BigInteger winVertcMask;
-  private static BigInteger winDiagRMask;
-  private static BigInteger winDiagLMask;
+  private int size                         = 19;
+  private JButton[] button                 = new JButton[ size*size ];
+  private Insets inset                     = new Insets( 0, 0, 0, 0 );
+  private static boolean redPlayer         = true;
+  private static boolean isComputerPlaying = true;
+  private static boolean isComputerFirst   = true;;
+  private BigInteger redBoard              = BigInteger.ZERO;
+  private BigInteger blueBoard             = BigInteger.ZERO;
+  private BigInteger winHorizMask;
+  private BigInteger winVertcMask;
+  private BigInteger winDiagRMask;
+  private BigInteger winDiagLMask;
 
   Board(){
     initLayout();
     initMasks();
+  }
+  
+  public int getBoardSize(){
+    return size;
+  }
+  
+  public BigInteger getRedBoard(){
+    return redBoard;
+  }
+  
+  public BigInteger getBlueBoard(){
+    return blueBoard;
+  }
+  
+  public void setRedBoard( BigInteger board ){
+    redBoard = board;
+  }
+  
+  public void setBlueBoard( BigInteger board ){
+    blueBoard = board;
+  }
+  
+  public BigInteger getEmptySquares(){
+    BigInteger base = new BigInteger( "2" );
+    BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
+    return redBoard.or( blueBoard ).xor( allBoard );
+  }
+  
+  public void setButton( int square, Color color){
+    button[ square ].setBackground(color);
   }
   
   private void initLayout() {
@@ -65,11 +97,6 @@ public class Board extends JPanel implements ActionListener{
                                  .add( base.pow( 2 * ( size - 1 ) + 4 ) )
                                  .add( base.pow( 3 * ( size - 1 ) + 4 ) )
                                  .add( base.pow( 4 * ( size - 1 ) + 4 ) );
-
-    System.out.println( "Mask1: " + winHorizMask );
-    System.out.println( "Mask2: " + winVertcMask );
-    System.out.println( "Mask3: " + winDiagRMask );
-    System.out.println( "Mask4: " + winDiagLMask );
   }
 
   public void actionPerformed(ActionEvent e){
@@ -90,16 +117,31 @@ public class Board extends JPanel implements ActionListener{
   
   public void handleClick( Color c, int clicked ){
     BigInteger shiftMe = BigInteger.ONE;
-    //playerBoard = playerBoard.or( shiftMe.shiftLeft( clicked ) );
     button[clicked].setBackground(c);
-    if( redPlayer )
-      redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
-    else
-      blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
-    if( isGameOver() ){
-      initNewGame();
+    Color oppColor = (c == Color.RED) ? Color.BLUE : Color.RED;
+    if( !isComputerPlaying ){
+      if( redPlayer )
+        redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
+      else
+        blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
+      if( isGameOver() ){
+        initNewGame();
+      }
+      redPlayer = !redPlayer;
     }
-    redPlayer = !redPlayer;
+    else{
+      if( isComputerFirst ){
+        blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
+      }
+      else{
+        redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
+      }
+      if( isGameOver() ){
+        initNewGame();
+      }
+      else
+        ComputerMove.makeMove( this, oppColor );
+    }
   }
   
   private boolean isGameOver(){
@@ -122,8 +164,8 @@ public class Board extends JPanel implements ActionListener{
   
   private boolean isDraw(){
     BigInteger base = new BigInteger( "2" );
-    if( redBoard.or( blueBoard ).equals( base.pow( size*size ).subtract( 
-                        new BigInteger( "1" ) ) ) ){
+    BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
+    if( redBoard.or( blueBoard ).equals( allBoard ) ){
       return true;
     }
     return false;
@@ -179,16 +221,28 @@ public class Board extends JPanel implements ActionListener{
     for( int i=0; i<size*size; i++){
       button[i].setBackground ( Color.lightGray );
     }
+    
+    if( isComputerPlaying && isComputerFirst){
+      redPlayer = true;
+      ComputerMove.makeMove( this, Color.RED );
+      redPlayer = false;
+    }
   }
 
   public static void main(String[] args){
-    Board t = new Board();
-    JFrame f = new JFrame( "Amõba" );
+    Board board = new Board();
+    JFrame f    = new JFrame( "Amõba" );
     f.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-    f.setSize(800,800);
+    f.setSize( 800, 800);
     f.setLocationRelativeTo( null );
     f.setVisible(true);
-    f.add(t);
+    f.add(board);
+    
+    if( isComputerPlaying && isComputerFirst ){
+      ComputerMove.makeMove( board, Color.RED );
+      redPlayer = !redPlayer;
+    }
+    
   }
 
 }
