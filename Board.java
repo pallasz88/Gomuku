@@ -18,7 +18,7 @@ public class Board extends JPanel implements ActionListener{
   private Insets inset                     = new Insets( 0, 0, 0, 0 );
   private static boolean redPlayer         = true;
   private static boolean isComputerPlaying = true;
-  private static boolean isComputerFirst   = true;;
+  private static boolean isComputerFirst   = true;
   private BigInteger redBoard              = BigInteger.ZERO;
   private BigInteger blueBoard             = BigInteger.ZERO;
   private BigInteger winHorizMask;
@@ -30,37 +30,37 @@ public class Board extends JPanel implements ActionListener{
     initLayout();
     initMasks();
   }
-  
+
   public int getBoardSize(){
     return size;
   }
-  
+
   public BigInteger getRedBoard(){
     return redBoard;
   }
-  
+
   public BigInteger getBlueBoard(){
     return blueBoard;
   }
-  
+
   public void setRedBoard( BigInteger board ){
     redBoard = board;
   }
-  
+
   public void setBlueBoard( BigInteger board ){
     blueBoard = board;
   }
-  
+
   public BigInteger getEmptySquares(){
     BigInteger base = new BigInteger( "2" );
     BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
     return redBoard.or( blueBoard ).xor( allBoard );
   }
-  
+
   public void setButton( int square, Color color){
     button[ square ].setBackground(color);
   }
-  
+
   private void initLayout() {
     setLayout( new GridBagLayout() );
     GridBagConstraints gbc = new GridBagConstraints( 0, 0, 1, 1, 1.0, 1.0,
@@ -75,7 +75,7 @@ public class Board extends JPanel implements ActionListener{
       add(button[i], gbc);
     }
   }
-  
+
   private void initMasks(){
     BigInteger base = new BigInteger( "2" );
     winHorizMask = BigInteger.ONE.add( base.pow( 1 ) )
@@ -114,7 +114,15 @@ public class Board extends JPanel implements ActionListener{
     }
 
   }
-  
+
+  private boolean isNewGameNeeded(){
+    if( isGameOver() ){
+      initNewGame();
+      return true;
+    }
+    return false;
+  }
+
   public void handleClick( Color c, int clicked ){
     BigInteger shiftMe = BigInteger.ONE;
     button[clicked].setBackground(c);
@@ -124,9 +132,8 @@ public class Board extends JPanel implements ActionListener{
         redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
       else
         blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
-      if( isGameOver() ){
-        initNewGame();
-      }
+      if( isNewGameNeeded() )
+        return;
       redPlayer = !redPlayer;
     }
     else{
@@ -136,21 +143,22 @@ public class Board extends JPanel implements ActionListener{
       else{
         redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
       }
-      if( isGameOver() ){
-        initNewGame();
-      }
-      else
+      if( isNewGameNeeded() )
+        return;
+      else{
         ComputerMove.makeMove( this, oppColor );
+        redPlayer = !redPlayer;
+        if( isNewGameNeeded() )
+          return;
+        redPlayer = !redPlayer;
+      }
     }
   }
-  
+
   private boolean isGameOver(){
     String message = "";
-    if(redPlayer)
-      message = "Nyert a piros játékos!";
-    else
-      message = "Nyert a kék játékos!";
     if( isWin() ){
+      message = ( redPlayer ) ? "Nyert a piros játékos!" : "Nyert a kék játékos!";
       JOptionPane.showMessageDialog( this, message );
       return true;
     }
@@ -161,7 +169,7 @@ public class Board extends JPanel implements ActionListener{
     }
     return false;
   }
-  
+
   private boolean isDraw(){
     BigInteger base = new BigInteger( "2" );
     BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
@@ -173,40 +181,41 @@ public class Board extends JPanel implements ActionListener{
 
   private boolean isWin(){
 
-    System.out.println( redBoard.or( blueBoard ) );
-    
     if( checkWin( size, size-4, winHorizMask ) ){
       return true;
     }
-    
+
     if( checkWin( size-4, size, winVertcMask ) ){
       return true;
     }
-    
+
     if( checkWin( size-4, size-4, winDiagRMask ) ){
       return true;
     }
-    
+
     if( checkWin( size-4, size-4, winDiagLMask ) ){
       return true;
     }
     return false;
   }
-  
+
+  private boolean isWinningPattern( BigInteger playerBoard, BigInteger mask, int shift ){
+    return playerBoard.shiftRight( shift ).and( mask ).equals( mask );
+  }
+
+  public int getShiftNum( int row, int col ){
+    return row * size + col;
+  }
+
   private boolean checkWin( int x, int y, BigInteger mask){
     for( int row = 0; row < x; row++ ){
       for( int col = 0; col < y; col++ ){
-        BigInteger redBuf  = redBoard;
-        BigInteger blueBuf = blueBoard;
-        if( redPlayer ){
-          if( (redBuf.shiftRight( row*size + col).and( mask ) ).equals( mask ) ){
+        int shift = getShiftNum( row, col);
+        if( redPlayer && isWinningPattern( redBoard, mask, shift ) ){
             return true;
-          }
         }
-        else{
-          if( (blueBuf.shiftRight( row*size + col).and( mask ) ).equals( mask ) ){
+        else if( !redPlayer && isWinningPattern( blueBoard, mask, shift ) ){
             return true;
-          }
         }
       }
     }
@@ -216,14 +225,13 @@ public class Board extends JPanel implements ActionListener{
   private void initNewGame(){
     redBoard  = BigInteger.ZERO;
     blueBoard = BigInteger.ZERO;
-    redPlayer = false;
+    redPlayer = true;
 
     for( int i=0; i<size*size; i++){
       button[i].setBackground ( Color.lightGray );
     }
-    
-    if( isComputerPlaying && isComputerFirst){
-      redPlayer = true;
+
+    if( isComputerPlaying && isComputerFirst ){
       ComputerMove.makeMove( this, Color.RED );
       redPlayer = false;
     }
@@ -235,14 +243,15 @@ public class Board extends JPanel implements ActionListener{
     f.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
     f.setSize( 800, 800);
     f.setLocationRelativeTo( null );
-    f.setVisible(true);
+    f.setVisible( true );
+    f.setResizable( false );
     f.add(board);
-    
+
     if( isComputerPlaying && isComputerFirst ){
       ComputerMove.makeMove( board, Color.RED );
       redPlayer = !redPlayer;
     }
-    
+
   }
 
 }
