@@ -1,21 +1,10 @@
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JButton;
-import javax.swing.JOptionPane;
-import java.awt.Color;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.math.BigInteger;
 
 
-public class Board extends JPanel implements ActionListener{
+public class GameBoard{
 
-  private int size                         = 19;
-  private JButton[] button                 = new JButton[ size*size ];
-  private Insets inset                     = new Insets( 0, 0, 0, 0 );
+  private static int size;
+  private static int legalMovesNum;
   private static boolean redPlayer         = true;
   private static boolean isComputerPlaying = true;
   private static boolean isComputerFirst   = true;
@@ -26,9 +15,14 @@ public class Board extends JPanel implements ActionListener{
   private BigInteger winDiagRMask;
   private BigInteger winDiagLMask;
 
-  Board(){
-    initLayout();
+  GameBoard( int size ){
+    this.size = size;
+    initLegalMovesNum();
     initMasks();
+  }
+
+  public void setBoardSize( int newSize ){
+    size = newSize;
   }
 
   public int getBoardSize(){
@@ -47,8 +41,56 @@ public class Board extends JPanel implements ActionListener{
     redBoard = board;
   }
 
+  public void setRedBoard( int clicked ){
+    redBoard = redBoard.setBit( clicked );
+  }
+
   public void setBlueBoard( BigInteger board ){
     blueBoard = board;
+  }
+
+  public void setBlueBoard( int clicked ){
+    blueBoard = blueBoard.setBit( clicked );
+  }
+
+  public void decrementLegalMovesNum(){
+    legalMovesNum--;
+  }
+
+  public int getLegalMovesNum(){
+    return legalMovesNum;
+  }
+
+  public void initLegalMovesNum(){
+    legalMovesNum = size * size;
+  }
+
+  public void initRedPlayer(){
+    redPlayer = true;
+  }
+
+  public void switchRedPlayer(){
+    redPlayer = !redPlayer;
+  }
+
+  public boolean getRedPlayer(){
+    return redPlayer;
+  }
+
+  public static boolean getIsComputerPlaying(){
+    return isComputerPlaying;
+  }
+
+  public static boolean getIsComputerFirst(){
+    return isComputerFirst;
+  }
+
+  public void setIsComputerPlaying( boolean plays ){
+    isComputerPlaying = plays;
+  }
+
+  public void setIsComputerFirst( boolean first ){
+    isComputerFirst = first;
   }
 
   public BigInteger getEmptySquares(){
@@ -57,23 +99,18 @@ public class Board extends JPanel implements ActionListener{
     return redBoard.or( blueBoard ).xor( allBoard );
   }
 
-  public void setButton( int square, Color color){
-    button[ square ].setBackground(color);
-  }
-
-  private void initLayout() {
-    setLayout( new GridBagLayout() );
-    GridBagConstraints gbc = new GridBagConstraints( 0, 0, 1, 1, 1.0, 1.0,
-        GridBagConstraints.CENTER, GridBagConstraints.BOTH, inset, 0, 0 );
-
-    for( int i=0; i < size*size; i++ ){
-      gbc.gridx = i % size;
-      gbc.gridy = i / size;
-      button[i] = new JButton();
-      button[i].addActionListener( this );
-      button[i].setBackground ( Color.lightGray );
-      add(button[i], gbc);
+  public int[] getEmptySquareArray(){
+    BigInteger emptyBitBoard = getEmptySquares();
+    int[] emptySquareArray = new int[ size * size ];
+    int i=0;
+    for( int sq=0; sq < size*size; sq++) {
+      if( emptyBitBoard.testBit( sq ) )
+        emptySquareArray[ i ] = sq;
+      else
+        emptySquareArray[ i ] = -1;
+      i++;
     }
+    return emptySquareArray;
   }
 
   private void initMasks(){
@@ -99,72 +136,24 @@ public class Board extends JPanel implements ActionListener{
                                  .add( base.pow( 4 * ( size - 1 ) + 4 ) );
   }
 
-  public void actionPerformed(ActionEvent e){
-    JButton src = ( JButton ) e.getSource();
-
-    for( int i=0; i < size*size; i++ ) {
-      if( src == button[i] && src.getBackground() == Color.lightGray ){
-        if( redPlayer ){
-          handleClick( Color.RED, i );
-        }
-        else{
-          handleClick( Color.BLUE, i );
-        }
-      }
-    }
-
-  }
-
-  private boolean isNewGameNeeded(){
-    if( isGameOver() ){
-      initNewGame();
+  public boolean isNewGameNeeded( Gui gui ){
+    if( isGameOver( gui ) ){
+      initNewGame( gui );
       return true;
     }
     return false;
   }
 
-  public void handleClick( Color c, int clicked ){
-    BigInteger shiftMe = BigInteger.ONE;
-    button[clicked].setBackground(c);
-    Color oppColor = (c == Color.RED) ? Color.BLUE : Color.RED;
-    if( !isComputerPlaying ){
-      if( redPlayer )
-        redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
-      else
-        blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
-      if( isNewGameNeeded() )
-        return;
-      redPlayer = !redPlayer;
-    }
-    else{
-      if( isComputerFirst ){
-        blueBoard = blueBoard.or( shiftMe.shiftLeft( clicked ) );
-      }
-      else{
-        redBoard = redBoard.or( shiftMe.shiftLeft( clicked ) );
-      }
-      if( isNewGameNeeded() )
-        return;
-      else{
-        ComputerMove.makeMove( this, oppColor );
-        redPlayer = !redPlayer;
-        if( isNewGameNeeded() )
-          return;
-        redPlayer = !redPlayer;
-      }
-    }
-  }
-
-  private boolean isGameOver(){
+  private boolean isGameOver( Gui gui ){
     String message = "";
     if( isWin() ){
       message = ( redPlayer ) ? "Nyert a piros játékos!" : "Nyert a kék játékos!";
-      JOptionPane.showMessageDialog( this, message );
+      gui.showMessage( message );
       return true;
     }
     if( isDraw() ){
       message = "Döntetlen";
-      JOptionPane.showMessageDialog( this, message );
+      gui.showMessage( message );
       return true;
     }
     return false;
@@ -210,7 +199,7 @@ public class Board extends JPanel implements ActionListener{
   private boolean checkWin( int x, int y, BigInteger mask){
     for( int row = 0; row < x; row++ ){
       for( int col = 0; col < y; col++ ){
-        int shift = getShiftNum( row, col);
+        int shift = getShiftNum( row, col );
         if( redPlayer && isWinningPattern( redBoard, mask, shift ) ){
             return true;
         }
@@ -222,36 +211,23 @@ public class Board extends JPanel implements ActionListener{
     return false;
   }
 
-  private void initNewGame(){
-    redBoard  = BigInteger.ZERO;
-    blueBoard = BigInteger.ZERO;
-    redPlayer = true;
+  public void initNewGame( Gui gui ){
+    setRedBoard( BigInteger.ZERO );
+    setBlueBoard( BigInteger.ZERO );
+    initRedPlayer();
 
-    for( int i=0; i<size*size; i++){
-      button[i].setBackground ( Color.lightGray );
-    }
+    gui.initButtons();
 
-    if( isComputerPlaying && isComputerFirst ){
-      ComputerMove.makeMove( this, Color.RED );
-      redPlayer = false;
-    }
+    initLegalMovesNum();
+
+    gui.makeComputerFirstMoveIfNeeded();
   }
 
-  public static void main(String[] args){
-    Board board = new Board();
-    JFrame f    = new JFrame( "Amõba" );
-    f.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-    f.setSize( 800, 800);
-    f.setLocationRelativeTo( null );
-    f.setVisible( true );
-    f.setResizable( false );
-    f.add(board);
-
-    if( isComputerPlaying && isComputerFirst ){
-      ComputerMove.makeMove( board, Color.RED );
-      redPlayer = !redPlayer;
-    }
-
+  public static void main( String[] args ){
+    int size = 19;
+    GameBoard board = new GameBoard( size );
+    Gui gui         = new Gui( size, board );
+    gui.makeComputerFirstMoveIfNeeded();
   }
 
 }

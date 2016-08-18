@@ -5,29 +5,35 @@ import java.awt.Color;
 public class ComputerMove{
 
 
-  public static void makeMove( Board board, Color color ){
-    BigInteger shiftMe = BigInteger.ONE;
+  public static void makeMove( Gui gui, GameBoard board, Color color ){
     int square = pickMove( board );
-    board.setButton( square, color );
-    if( color == Color.RED )
-      board.setRedBoard( board.getRedBoard().or( shiftMe.shiftLeft( square ) ) );
+    gui.setButton( square, color );
+    if( color == Color.RED ){
+      board.setRedBoard( square );
+    }
     else
-      board.setBlueBoard( board.getBlueBoard().or( shiftMe.shiftLeft( square ) ) );
+      board.setBlueBoard( square );
   }
 
-  public static int pickMove( Board board ){
+  public static int pickMove( GameBoard board ){
     BigInteger empties = board.getEmptySquares();
-    Random rand = new Random();
+    Random rand        = new Random();
+    int boardSize      = board.getBoardSize();
     int row;
     int col;
     int square;
     do{
-      row = rand.nextInt( board.getBoardSize() );
-      col = rand.nextInt( board.getBoardSize() );
-      square = row * board.getBoardSize() + col;
-    }while( !empties.shiftRight( board.getShiftNum( row,col ) ).and( BigInteger.ONE ).equals(
-                                                                     BigInteger. ONE) );
+      row    = rand.nextInt( boardSize );
+      col    = rand.nextInt( boardSize );
+      square = board.getShiftNum( row, col );
+    }while( !empties.testBit( square ) );
     return square;
   }
-
+/*
+  public static int callComputer( GameBoard board ){
+    int alpha = -Integer.MAX_VALUE;
+    int beta  =  Integer.MAX_VALUE;
+    Master.negaMax( board, 3, alpha, beta, 1 );
+  }
+*/
 }
