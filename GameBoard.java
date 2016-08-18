@@ -146,7 +146,7 @@ public class GameBoard{
 
   private boolean isGameOver( Gui gui ){
     String message = "";
-    if( isWin() ){
+    if( isWin( gui ) ){
       message = ( redPlayer ) ? "Nyert a piros játékos!" : "Nyert a kék játékos!";
       gui.showMessage( message );
       return true;
@@ -161,31 +161,41 @@ public class GameBoard{
 
   private boolean isDraw(){
     BigInteger base = new BigInteger( "2" );
-    BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
+    BigInteger allBoard = base.pow( size*size ).subtract( BigInteger.ONE );
     if( redBoard.or( blueBoard ).equals( allBoard ) ){
       return true;
     }
     return false;
   }
 
-  private boolean isWin(){
+  private boolean isWin( Gui gui ){
 
-    if( checkWin( size, size-4, winHorizMask ) ){
+    if( checkWin( size, size-4, winHorizMask, gui ) ){
       return true;
     }
 
-    if( checkWin( size-4, size, winVertcMask ) ){
+    if( checkWin( size-4, size, winVertcMask, gui ) ){
       return true;
     }
 
-    if( checkWin( size-4, size-4, winDiagRMask ) ){
+    if( checkWin( size-4, size-4, winDiagRMask, gui ) ){
       return true;
     }
 
-    if( checkWin( size-4, size-4, winDiagLMask ) ){
+    if( checkWin( size-4, size-4, winDiagLMask, gui ) ){
       return true;
     }
     return false;
+  }
+
+  private void showWinningPattern( Gui gui, BigInteger mask, int shift ){
+    BigInteger pattern = mask;
+    pattern = pattern.shiftLeft( shift );
+    for( int i=0; i < size * size; i++ ){
+      if( pattern.testBit( i ) ){
+        gui.showOneWinningButton( i );
+      }
+    }
   }
 
   private boolean isWinningPattern( BigInteger playerBoard, BigInteger mask, int shift ){
@@ -196,15 +206,17 @@ public class GameBoard{
     return row * size + col;
   }
 
-  private boolean checkWin( int x, int y, BigInteger mask){
+  private boolean checkWin( int x, int y, BigInteger mask, Gui gui){
     for( int row = 0; row < x; row++ ){
       for( int col = 0; col < y; col++ ){
         int shift = getShiftNum( row, col );
         if( redPlayer && isWinningPattern( redBoard, mask, shift ) ){
-            return true;
+          showWinningPattern( gui, mask, shift );
+          return true;
         }
         else if( !redPlayer && isWinningPattern( blueBoard, mask, shift ) ){
-            return true;
+          showWinningPattern( gui, mask, shift );
+          return true;
         }
       }
     }

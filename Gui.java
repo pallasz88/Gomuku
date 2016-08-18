@@ -105,8 +105,12 @@ public class Gui extends JPanel implements ActionListener{
 
   public void initButtons(){
     for( int i=0; i < size*size; i++ ){
-      button[i].setBackground ( Color.lightGray );
+      button[ i ].setBackground ( Color.lightGray );
     }
+  }
+
+  public void showOneWinningButton( int square ){
+    button[ square ].setBackground ( Color.YELLOW );
   }
 
   public void makeComputerFirstMoveIfNeeded(){
