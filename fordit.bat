@@ -1,7 +1,7 @@
 @echo off
-javac -Xdiags:verbose Gui.java ComputerMove.java GameBoard.java
+javac -Xdiags:verbose *.java
 echo OK
 PAUSE
-java GameBoard
+java -ea GameBoard 19 1 1 2
 PAUSE
 jar cf Gomuku.jar Gui.java ComputerMove.java GameBoard.java

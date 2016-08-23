@@ -1,24 +1,36 @@
 import java.math.BigInteger;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class GameBoard{
 
-  private static int size;
-  private static int legalMovesNum;
-  private static boolean redPlayer         = true;
-  private static boolean isComputerPlaying = true;
-  private static boolean isComputerFirst   = true;
-  private BigInteger redBoard              = BigInteger.ZERO;
-  private BigInteger blueBoard             = BigInteger.ZERO;
+  private int size;
+  private int legalMovesNum;
+  private boolean redPlayer        = true;
+  private BigInteger redBoard      = BigInteger.ZERO;
+  private BigInteger blueBoard     = BigInteger.ZERO;
+  private static Computer computerPlayer;
   private BigInteger winHorizMask;
   private BigInteger winVertcMask;
   private BigInteger winDiagRMask;
   private BigInteger winDiagLMask;
 
-  GameBoard( int size ){
+  GameBoard( int     size,
+             boolean isComputerPlaying,
+             boolean isComputerFirst,
+             int mode ){
     this.size = size;
     initLegalMovesNum();
     initMasks();
+    if( mode == 1 )
+      computerPlayer = new RandomPlayer( isComputerPlaying, isComputerFirst );
+    else if( mode == 2 )
+      computerPlayer = new SmartPlayer( isComputerPlaying, isComputerFirst );
+  }
+
+  public Computer getComputerPlayer() {
+    return ( Computer )computerPlayer;
   }
 
   public void setBoardSize( int newSize ){
@@ -77,38 +89,18 @@ public class GameBoard{
     return redPlayer;
   }
 
-  public static boolean getIsComputerPlaying(){
-    return isComputerPlaying;
-  }
-
-  public static boolean getIsComputerFirst(){
-    return isComputerFirst;
-  }
-
-  public void setIsComputerPlaying( boolean plays ){
-    isComputerPlaying = plays;
-  }
-
-  public void setIsComputerFirst( boolean first ){
-    isComputerFirst = first;
-  }
-
   public BigInteger getEmptySquares(){
     BigInteger base = new BigInteger( "2" );
     BigInteger allBoard = base.pow( size*size ).subtract( new BigInteger( "1" ) );
     return redBoard.or( blueBoard ).xor( allBoard );
   }
 
-  public int[] getEmptySquareArray(){
+  public List< Integer > getEmptySquareList(){
     BigInteger emptyBitBoard = getEmptySquares();
-    int[] emptySquareArray = new int[ size * size ];
-    int i=0;
+    List<Integer> emptySquareArray = new ArrayList< Integer >();
     for( int sq=0; sq < size*size; sq++) {
       if( emptyBitBoard.testBit( sq ) )
-        emptySquareArray[ i ] = sq;
-      else
-        emptySquareArray[ i ] = -1;
-      i++;
+        emptySquareArray.add( sq );
     }
     return emptySquareArray;
   }
@@ -231,15 +223,22 @@ public class GameBoard{
     gui.initButtons();
 
     initLegalMovesNum();
-
-    gui.makeComputerFirstMoveIfNeeded();
+    assert getEmptySquareList().size() == legalMovesNum;
+    computerPlayer.makeComputerFirstMoveIfNeeded( gui, this );
   }
 
   public static void main( String[] args ){
-    int size = 19;
-    GameBoard board = new GameBoard( size );
-    Gui gui         = new Gui( size, board );
-    gui.makeComputerFirstMoveIfNeeded();
+    int     forPassSize  = Integer.parseInt ( args[0] );
+    boolean itPlays      = ( args[1].equals( "1" ) ) ? true : false;
+    boolean plays1st     = ( args[2].equals( "1" ) ) ? true : false;
+    int     opponent     = Integer.parseInt ( args[3] );
+    assert ( forPassSize >= 5 && forPassSize <= 19 );
+    assert ( args[1].equals( "1" ) || args[1].equals( "0" ) );
+    assert ( args[2].equals( "1" ) || args[2].equals( "0" ) );
+    assert ( args[3].equals( "1" ) || args[3].equals( "2" ) );
+    GameBoard board  = new GameBoard( forPassSize, itPlays, plays1st, opponent );
+    Gui gui          = new Gui( forPassSize, board );
+    computerPlayer.makeComputerFirstMoveIfNeeded( gui, board );
   }
 
 }

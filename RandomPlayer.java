@@ -2,10 +2,14 @@ import java.util.Random;
 import java.math.BigInteger;
 import java.awt.Color;
 
-public class ComputerMove{
+public class RandomPlayer extends Computer{
 
+  RandomPlayer( boolean isPlaying, boolean isFirst ){
+    super( isPlaying, isFirst );
+  }
 
-  public static void makeMove( Gui gui, GameBoard board, Color color ){
+  @Override
+  public void makeMove( Gui gui, GameBoard board, Color color ){
     int square = pickMove( board );
     gui.setButton( square, color );
     if( color == Color.RED ){
@@ -29,11 +33,15 @@ public class ComputerMove{
     }while( !empties.testBit( square ) );
     return square;
   }
-/*
-  public static int callComputer( GameBoard board ){
-    int alpha = -Integer.MAX_VALUE;
-    int beta  =  Integer.MAX_VALUE;
-    Master.negaMax( board, 3, alpha, beta, 1 );
+
+  @Override
+  public void makeComputerFirstMoveIfNeeded( Gui gui, GameBoard board ){
+    if( isComputerPlaying && isComputerFirst ){
+      makeMove( gui, board, Color.RED );
+      board.decrementLegalMovesNum();
+      board.initRedPlayer();
+      board.switchRedPlayer();
+    }
   }
-*/
+
 }

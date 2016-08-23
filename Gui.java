@@ -12,7 +12,7 @@ import java.awt.event.ActionEvent;
 
 public class Gui extends JPanel implements ActionListener{
 
-  private static int size;
+  private int size;
   private JButton[] button;
   private Insets inset     = new Insets( 0, 0, 0, 0 );
   private GameBoard board;
@@ -68,7 +68,7 @@ public class Gui extends JPanel implements ActionListener{
   public void handleClick( Color c, int clicked ){
     Color oppColor = (c == Color.RED) ? Color.BLUE : Color.RED;
     button[clicked].setBackground(c);
-    if( !board.getIsComputerPlaying() ){
+    if( !board.getComputerPlayer().getIsComputerPlaying() ){
       if( board.getRedPlayer() )
         board.setRedBoard( clicked );
       else
@@ -79,7 +79,7 @@ public class Gui extends JPanel implements ActionListener{
       board.switchRedPlayer();
     }
     else{
-      if( board.getIsComputerFirst() ){
+      if( board.getComputerPlayer().getIsComputerFirst() ){
         board.setBlueBoard( clicked );
       }
       else{
@@ -89,7 +89,7 @@ public class Gui extends JPanel implements ActionListener{
       if( board.isNewGameNeeded( this ) )
         return;
       else{
-        ComputerMove.makeMove( this, board, oppColor );
+        board.getComputerPlayer().makeMove( this, board, oppColor );
         board.decrementLegalMovesNum();
         board.switchRedPlayer();
         if( board.isNewGameNeeded( this ) )
@@ -111,16 +111,6 @@ public class Gui extends JPanel implements ActionListener{
 
   public void showOneWinningButton( int square ){
     button[ square ].setBackground ( Color.YELLOW );
-  }
-
-  public void makeComputerFirstMoveIfNeeded(){
-    if( board.getIsComputerPlaying() &&
-        board.getIsComputerFirst() ){
-      ComputerMove.makeMove( this, board, Color.RED );
-      board.decrementLegalMovesNum();
-      board.initRedPlayer();
-      board.switchRedPlayer();
-    }
   }
 
 }
