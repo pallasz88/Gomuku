@@ -29,6 +29,16 @@ public class GameBoard{
       computerPlayer = new SmartPlayer( isComputerPlaying, isComputerFirst );
   }
 
+  GameBoard( GameBoard copyBoard ){
+    this.size = copyBoard.size;
+    this.legalMovesNum = copyBoard.legalMovesNum;
+    this.redPlayer = copyBoard.redPlayer;
+    this.redBoard = copyBoard.redBoard;
+    this.blueBoard = copyBoard.blueBoard;
+    this.computerPlayer = copyBoard.computerPlayer;
+    initMasks();
+  }
+
   public Computer getComputerPlayer() {
     return ( Computer )computerPlayer;
   }
@@ -105,6 +115,22 @@ public class GameBoard{
     return emptySquareArray;
   }
 
+  public BigInteger getWinHorizMask(){
+    return winHorizMask;
+  }
+
+  public BigInteger getWinVertcMask(){
+    return winVertcMask;
+  }
+
+  public BigInteger getWinDiagLMask(){
+    return winDiagLMask;
+  }
+
+  public BigInteger getWinDiagRMask(){
+    return winDiagRMask;
+  }
+
   private void initMasks(){
     BigInteger base = new BigInteger( "2" );
     winHorizMask = BigInteger.ONE.add( base.pow( 1 ) )
@@ -151,7 +177,7 @@ public class GameBoard{
     return false;
   }
 
-  private boolean isDraw(){
+  public boolean isDraw(){
     BigInteger base = new BigInteger( "2" );
     BigInteger allBoard = base.pow( size*size ).subtract( BigInteger.ONE );
     if( redBoard.or( blueBoard ).equals( allBoard ) ){
@@ -160,7 +186,7 @@ public class GameBoard{
     return false;
   }
 
-  private boolean isWin( Gui gui ){
+  public boolean isWin( Gui gui ){
 
     if( checkWin( size, size-4, winHorizMask, gui ) ){
       return true;
@@ -198,7 +224,7 @@ public class GameBoard{
     return row * size + col;
   }
 
-  private boolean checkWin( int x, int y, BigInteger mask, Gui gui){
+  private boolean checkWin( int x, int y, BigInteger mask, Gui gui ){
     for( int row = 0; row < x; row++ ){
       for( int col = 0; col < y; col++ ){
         int shift = getShiftNum( row, col );

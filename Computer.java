@@ -26,6 +26,14 @@ public class Computer{
     isComputerFirst = first;
   }
 
+  public void tryMove( GameBoard board, int color, int square ){
+    if( color == 1 ){
+      board.setRedBoard( square );
+    }
+    else
+      board.setBlueBoard( square );
+  }
+
   public void makeMove( Gui gui, GameBoard board, Color color ){
 
   }
